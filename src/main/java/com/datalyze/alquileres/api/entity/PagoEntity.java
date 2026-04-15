@@ -1,9 +1,13 @@
 package com.datalyze.alquileres.api.entity;
 
+import com.datalyze.alquileres.api.enumeration.PagoEstado;
+import com.datalyze.alquileres.api.enumeration.PagoTipoPago;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 
@@ -29,10 +33,14 @@ public class PagoEntity {
     private LocalDate fechaPago;
     @Column(name = "fecha_vencimiento")
     private LocalDate fechaVencimiento;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "estado")
-    private String estado;
+    private PagoEstado estado;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "tipo_pago")
-    private String tipoPago;
+    private PagoTipoPago tipoPago;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_contrato", referencedColumnName = "id_contrato",insertable = false, updatable = false)

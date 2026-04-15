@@ -62,8 +62,8 @@ public class ClienteService {
         this.clienteRepository.deleteById(id);
     }
 
-    public List<ClienteDTO> getClienteNotContract() {
-        return this.clienteMapper.toDtoList(this.clienteRepository.findClientesSinContratoActivo(ContratoEstado.Activo));
+    public List<ClienteResumenDTO> getClienteNotContract() {
+        return this.clienteMapper.toDtoResumenList(this.clienteRepository.findClientesConContratoActivo(ContratoEstado.Activo));
     }
 
     public List<ClienteResumenDTO> getClienteResumenEntity() {

@@ -54,6 +54,11 @@ public class ContratoController {
         return ResponseEntity.ok(estados);
     }
 
+    @GetMapping("/idCliente/{id}")
+    public ResponseEntity<List<ContratoDTO>> getContratoClienteEntity(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.contratoService.obtenerContratoDisponibleCliente(id));
+    }
+
 
 
 }

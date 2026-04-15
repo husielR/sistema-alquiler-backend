@@ -53,7 +53,7 @@ public class ClienteController {
     }
 
     @GetMapping("/activos")
-    public ResponseEntity<List<ClienteDTO>> getClienteActivoEntity() {
+    public ResponseEntity<List<ClienteResumenDTO>> getClienteActivoEntity() {
         return ResponseEntity.ok(this.clienteService.getClienteNotContract());
     }
 

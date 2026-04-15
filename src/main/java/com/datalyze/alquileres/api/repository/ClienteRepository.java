@@ -14,11 +14,11 @@ public interface ClienteRepository extends JpaRepository<ClienteEntity, Integer>
 
     @Query("""
                 SELECT c FROM ClienteEntity c
-                WHERE NOT EXISTS (
+                WHERE EXISTS (
                     SELECT ct FROM ContratoEntity ct
                     WHERE ct.cliente = c
                     AND ct.estado = :estado
                 )
             """)
-    List<ClienteEntity> findClientesSinContratoActivo(@Param("estado") ContratoEstado estado);
+    List<ClienteEntity> findClientesConContratoActivo(@Param("estado") ContratoEstado estado);
 }

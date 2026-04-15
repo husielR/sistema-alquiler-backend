@@ -6,6 +6,7 @@ import com.datalyze.alquileres.api.dto.request.ContratoRequestDTO;
 import com.datalyze.alquileres.api.entity.ClienteEntity;
 import com.datalyze.alquileres.api.entity.ContratoEntity;
 import com.datalyze.alquileres.api.entity.PropiedadEntity;
+import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import com.datalyze.alquileres.api.mapper.ContratoMapper;
 import com.datalyze.alquileres.api.repository.ContratoRepository;
 import com.datalyze.alquileres.api.service.imp.CrudImp;
@@ -59,5 +60,13 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
             throw new RuntimeException("Contrato no encontrado con ID: " + id);
         }
         this.contratoRepository.deleteById(id);
+    }
+
+    public List<ContratoDTO> obtenerContratoDisponibleCliente (Integer idCliente) {
+        List<ContratoEntity> contratoEntity = this.contratoRepository.findByEstadoAndCliente_IdCliente(ContratoEstado.Activo,idCliente);
+
+        return this.contratoMapper.toDtoList(contratoEntity);
+
+
     }
 }
