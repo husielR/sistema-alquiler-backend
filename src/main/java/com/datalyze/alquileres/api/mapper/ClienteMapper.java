@@ -1,6 +1,7 @@
 package com.datalyze.alquileres.api.mapper;
 
 import com.datalyze.alquileres.api.dto.ClienteDTO;
+import com.datalyze.alquileres.api.dto.ClienteResumenDTO;
 import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.entity.ClienteEntity;
 import org.mapstruct.Mapper;
@@ -13,6 +14,9 @@ public interface ClienteMapper {
     //Para el GET (Lectura)
     ClienteDTO toDto(ClienteEntity entity);
     List<ClienteDTO> toDtoList(List<ClienteEntity> entities);
+
+    List<ClienteResumenDTO> toDtoResumenList(List<ClienteEntity> entities);
+
 
     // Para el POST (Crear) -> Convierte el JSON de entrada a Entidad
     ClienteEntity toEntity(ClienteRequestDTO request);

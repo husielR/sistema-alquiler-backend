@@ -1,6 +1,7 @@
 package com.datalyze.alquileres.api.service;
 
 import com.datalyze.alquileres.api.dto.ClienteDTO;
+import com.datalyze.alquileres.api.dto.ClienteResumenDTO;
 import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.entity.ClienteEntity;
 import com.datalyze.alquileres.api.enumeration.ContratoEstado;
@@ -63,6 +64,10 @@ public class ClienteService {
 
     public List<ClienteDTO> getClienteNotContract() {
         return this.clienteMapper.toDtoList(this.clienteRepository.findClientesSinContratoActivo(ContratoEstado.Activo));
+    }
+
+    public List<ClienteResumenDTO> getClienteResumenEntity() {
+        return this.clienteMapper.toDtoResumenList(this.clienteRepository.findAll());
     }
 
 }

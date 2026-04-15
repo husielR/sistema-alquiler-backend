@@ -1,6 +1,7 @@
 package com.datalyze.alquileres.api.controller;
 
 import com.datalyze.alquileres.api.dto.ClienteDTO;
+import com.datalyze.alquileres.api.dto.ClienteResumenDTO;
 import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.service.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,11 @@ public class ClienteController {
     @GetMapping("/activos")
     public ResponseEntity<List<ClienteDTO>> getClienteActivoEntity() {
         return ResponseEntity.ok(this.clienteService.getClienteNotContract());
+    }
+
+    @GetMapping("/resumen")
+    public ResponseEntity<List<ClienteResumenDTO>> getClienteResumenEntity() {
+        return ResponseEntity.ok(this.clienteService.getClienteResumenEntity());
     }
 
 }

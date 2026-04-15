@@ -12,4 +12,6 @@ import java.util.List;
 @Repository
 public interface PropiedadRepository extends JpaRepository<PropiedadEntity,Integer> {
     List<PropiedadEntity> findByEstadoNot(PropiedadEstado estado);
+
+    List<PropiedadEntity> findByEstadoNotOrIdPropiedad(PropiedadEstado estado, Integer idPropiedad);
 }

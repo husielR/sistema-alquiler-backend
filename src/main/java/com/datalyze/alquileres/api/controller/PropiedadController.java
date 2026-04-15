@@ -58,4 +58,9 @@ public class PropiedadController {
     public ResponseEntity<List<PropiedadResumenDTO>> getClienteActivoEntity() {
         return ResponseEntity.ok(this.propiedadService.getPropiedadAvailable());
     }
+
+    @GetMapping("/disponibles-edicion/{idPropiedadActual}")
+    public ResponseEntity<List<PropiedadResumenDTO>> obtenerPropiedadesParaEdicion(@PathVariable Integer idPropiedadActual) {
+        return ResponseEntity.ok(this.propiedadService.getPropiedadesParaEdicion(idPropiedadActual));
+    }
 }

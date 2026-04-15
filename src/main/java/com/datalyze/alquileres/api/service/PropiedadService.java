@@ -76,4 +76,9 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
     public List<PropiedadResumenDTO> getPropiedadAvailable() {
         return this.propiedadMapper.toDtoResumenList(this.propiedadRepository.findByEstadoNot(PropiedadEstado.Ocupado));
     }
+
+    public List<PropiedadResumenDTO> getPropiedadesParaEdicion(Integer idPropiedadActual) {
+        List<PropiedadEntity> entidades = this.propiedadRepository.findByEstadoNotOrIdPropiedad(PropiedadEstado.Ocupado, idPropiedadActual);
+        return this.propiedadMapper.toDtoResumenList(entidades);
+    }
 }
