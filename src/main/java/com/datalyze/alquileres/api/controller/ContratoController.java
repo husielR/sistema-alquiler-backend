@@ -1,5 +1,6 @@
 package com.datalyze.alquileres.api.controller;
 
+import com.datalyze.alquileres.api.dto.ClienteDTO;
 import com.datalyze.alquileres.api.dto.ContratoDTO;
 import com.datalyze.alquileres.api.dto.PropiedadDTO;
 import com.datalyze.alquileres.api.dto.request.ContratoRequestDTO;
@@ -30,6 +31,11 @@ public class ContratoController {
         return ResponseEntity.ok(this.contratoService.obtenerTodos());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ContratoDTO> getContratoId(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.contratoService.obtenerPorId(id));
+    }
+
     @PostMapping
     public ResponseEntity<ContratoDTO> crearContrato(@RequestBody ContratoRequestDTO request) {
         return new ResponseEntity<>(this.contratoService.crear(request), HttpStatus.CREATED);
@@ -49,9 +55,15 @@ public class ContratoController {
     @GetMapping("/estados")
     public ResponseEntity<List<String>> obtenerEstados() {
         List<String> estados = Arrays.stream(ContratoEstado.values())
+                .filter(estado -> estado != ContratoEstado.Anulado)
                 .map(Enum::name)
                 .toList();
         return ResponseEntity.ok(estados);
+    }
+
+    @PutMapping("/{id}/anular")
+    public ResponseEntity<ContratoDTO> anularContrato(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.contratoService.anularContrato(id));
     }
 
     @GetMapping("/idCliente/{id}")

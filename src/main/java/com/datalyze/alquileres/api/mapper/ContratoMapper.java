@@ -9,7 +9,7 @@ import org.mapstruct.MappingTarget;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = {PagoMapper.class})
 public interface ContratoMapper {
     ContratoDTO toDto(ContratoEntity entity);
     List<ContratoDTO> toDtoList(List<ContratoEntity> entities);

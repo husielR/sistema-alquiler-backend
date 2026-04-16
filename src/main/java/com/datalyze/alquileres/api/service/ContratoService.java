@@ -49,6 +49,11 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
     public ContratoDTO actualizar(Integer id, ContratoRequestDTO request) {
         ContratoEntity contratoExistente = this.contratoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contrato no encontrado con ID: " + id));
+
+        if (contratoExistente.getEstado() == ContratoEstado.Anulado) {
+            throw new RuntimeException("Operación denegada: Un Contrato Anulado no puede ser modificado.");
+        }
+
         this.contratoMapper.updateEntity(request, contratoExistente);
         contratoExistente = this.contratoRepository.save(contratoExistente);
         return this.contratoMapper.toDto(contratoExistente);
@@ -67,6 +72,19 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
 
         return this.contratoMapper.toDtoList(contratoEntity);
 
+    }
 
+    public ContratoDTO anularContrato(Integer id) {
+        ContratoEntity pagoExistente = this.contratoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pago no encontrado con ID: " + id));
+
+        if (pagoExistente.getEstado() == ContratoEstado.Anulado) {
+            throw new RuntimeException("El pago ya se encuentra anulado.");
+        }
+
+        pagoExistente.setEstado(ContratoEstado.Anulado);
+        pagoExistente = this.contratoRepository.save(pagoExistente);
+
+        return this.contratoMapper.toDto(pagoExistente);
     }
 }

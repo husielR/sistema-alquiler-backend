@@ -10,6 +10,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Contrato")
@@ -47,4 +48,7 @@ public class ContratoEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_propiedad",referencedColumnName = "id_propiedad",insertable = false, updatable = false)
     private PropiedadEntity propiedad;
+
+    @OneToMany(mappedBy = "contrato")
+    private List<PagoEntity> pago;
 }

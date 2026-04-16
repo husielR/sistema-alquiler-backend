@@ -13,4 +13,8 @@ public interface ContratoRepository extends JpaRepository<ContratoEntity,Integer
 
     List<ContratoEntity> findByEstadoAndCliente_IdCliente(ContratoEstado estado, Integer idCliente);
 
+    boolean existsByCliente_IdCliente(Integer clienteIdCliente);
+
+    boolean existsByPropiedad_IdPropiedad(Integer propiedadIdPropiedad);
+
 }

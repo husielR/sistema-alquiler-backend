@@ -6,7 +6,9 @@ import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.entity.ClienteEntity;
 import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import com.datalyze.alquileres.api.mapper.ClienteMapper;
+import com.datalyze.alquileres.api.mapper.ContratoMapper;
 import com.datalyze.alquileres.api.repository.ClienteRepository;
+import com.datalyze.alquileres.api.repository.ContratoRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,7 @@ import java.util.List;
 public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final ClienteMapper clienteMapper;
+    private final ContratoRepository contratoRepository;
 
     // R - Read (Lista Completa)
     public List<ClienteDTO> getClienteEntity() {
@@ -59,8 +62,16 @@ public class ClienteService {
         if (!this.clienteRepository.existsById(id)) {
             throw new RuntimeException("Cliente no encontrado con ID: " + id);
         }
-        this.clienteRepository.deleteById(id);
+
+        boolean tieneContratos = this.contratoRepository.existsByCliente_IdCliente(id);
+
+        if (tieneContratos) {
+            throw new RuntimeException("No se puede eliminar: Este cliente tiene contratos en su historial. Por favor, desactívelo en su lugar.");
+        } else {
+            this.clienteRepository.deleteById(id);
+        }
     }
+
 
     public List<ClienteResumenDTO> getClienteNotContract() {
         return this.clienteMapper.toDtoResumenList(this.clienteRepository.findClientesConContratoActivo(ContratoEstado.Activo));

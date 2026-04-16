@@ -49,7 +49,7 @@ public class ClienteController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarCliente(@PathVariable Integer id) {
         this.clienteService.eliminarCliente(id);
-        return ResponseEntity.noContent().build(); // Devuelve un 204 No Content (Éxito sin devolver datos)
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/activos")

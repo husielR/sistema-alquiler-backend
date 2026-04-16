@@ -70,7 +70,14 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
         if (!this.propiedadRepository.existsById(id)) {
             throw new RuntimeException("Propiedad no encontrado con ID: " + id);
         }
-        this.propiedadRepository.deleteById(id);
+
+        boolean tienePropiedad = this.contratoRepository.existsByPropiedad_IdPropiedad(id);
+
+        if (tienePropiedad) {
+            throw new RuntimeException("No se puede eliminar: Este propiedad tiene contratos en su historial. Por favor, desactívelo en su lugar.");
+        } else {
+            this.contratoRepository.deleteById(id);
+        }
     }
 
     public List<PropiedadResumenDTO> getPropiedadAvailable() {
