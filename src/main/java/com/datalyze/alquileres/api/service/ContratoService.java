@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.time.temporal.ChronoUnit.MONTHS;
 
@@ -93,6 +94,7 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
     }
 
     @Override
+    @Transactional
     public ContratoDTO actualizar(Integer id, ContratoRequestDTO request) {
         ContratoEntity contratoExistente = this.contratoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contrato no encontrado con ID: " + id));
@@ -101,8 +103,27 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
             throw new RuntimeException("Operación denegada: Un Contrato Anulado no puede ser modificado.");
         }
 
+        if (!Objects.equals(contratoExistente.getIdPropiedad(), request.idPropiedad())) {
+            throw new RuntimeException("No se puede cambiar de propiedad en un contrato vigente. Finalice este contrato y cree uno nuevo para el otro cuarto.");
+        }
+
         this.contratoMapper.updateEntity(request, contratoExistente);
+        Integer idPropiedad = contratoExistente.getIdPropiedad();
+
+        PropiedadEntity propiedad = propiedadRepository.findById(contratoExistente.getIdPropiedad())
+                .orElseThrow(() -> new RuntimeException("Propiedad no encontrada con ID: " + idPropiedad));
+
+        ContratoEstado nuevoEstado = contratoExistente.getEstado();
+
+        if (nuevoEstado == ContratoEstado.Finalizado || nuevoEstado == ContratoEstado.Incumplido) {
+            propiedad.setEstado(PropiedadEstado.Disponible);
+        } else if (nuevoEstado == ContratoEstado.Activo) {
+            propiedad.setEstado(PropiedadEstado.Ocupado);
+        }
+
+        this.propiedadRepository.save(propiedad);
         contratoExistente = this.contratoRepository.save(contratoExistente);
+
         return this.contratoMapper.toDto(contratoExistente);
     }
 
@@ -131,6 +152,66 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
         }
 
         contratoExistente.setEstado(ContratoEstado.Anulado);
+        contratoExistente = this.contratoRepository.save(contratoExistente);
+
+        List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());
+        for (PagoEntity pago : pagosContrato) {
+            if (pago.getEstado() == PagoEstado.Pendiente || pago.getEstado() == PagoEstado.Atrasado) {
+                pago.setEstado(PagoEstado.Anulado);
+            }
+        }
+        this.pagoRepository.saveAll(pagosContrato);
+
+        PropiedadEntity propiedad = this.propiedadRepository.findById(contratoExistente.getIdPropiedad())
+                .orElseThrow(() -> new RuntimeException("Propiedad vinculada no encontrada"));
+
+        propiedad.setEstado(PropiedadEstado.Disponible);
+        this.propiedadRepository.save(propiedad);
+
+        return this.contratoMapper.toDto(contratoExistente);
+    }
+
+    @Transactional
+    public ContratoDTO finalizarContrato(Integer id) {
+
+        ContratoEntity contratoExistente = this.contratoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contrato no encontrado con ID: " + id));
+
+        if (contratoExistente.getEstado() != ContratoEstado.Activo) {
+            throw new RuntimeException("Solo se pueden finalizar contratos que estén Activos.");
+        }
+
+        contratoExistente.setEstado(ContratoEstado.Finalizado);
+        contratoExistente = this.contratoRepository.save(contratoExistente);
+
+        List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());
+        for (PagoEntity pago : pagosContrato) {
+            if (pago.getEstado() == PagoEstado.Pendiente || pago.getEstado() == PagoEstado.Atrasado) {
+                pago.setEstado(PagoEstado.Anulado);
+            }
+        }
+        this.pagoRepository.saveAll(pagosContrato);
+
+        PropiedadEntity propiedad = this.propiedadRepository.findById(contratoExistente.getIdPropiedad())
+                .orElseThrow(() -> new RuntimeException("Propiedad vinculada no encontrada"));
+
+        propiedad.setEstado(PropiedadEstado.Disponible);
+        this.propiedadRepository.save(propiedad);
+
+        return this.contratoMapper.toDto(contratoExistente);
+    }
+
+    @Transactional
+    public ContratoDTO incumplirContrato(Integer id) {
+
+        ContratoEntity contratoExistente = this.contratoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contrato no encontrado con ID: " + id));
+
+        if (contratoExistente.getEstado() != ContratoEstado.Activo) {
+            throw new RuntimeException("Solo se pueden marcar como incumplido que estén Activos.");
+        }
+
+        contratoExistente.setEstado(ContratoEstado.Incumplido);
         contratoExistente = this.contratoRepository.save(contratoExistente);
 
         List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());

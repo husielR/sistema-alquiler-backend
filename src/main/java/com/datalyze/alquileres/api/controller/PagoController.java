@@ -5,6 +5,7 @@ import com.datalyze.alquileres.api.dto.ContratoDTO;
 import com.datalyze.alquileres.api.dto.PagoDTO;
 import com.datalyze.alquileres.api.dto.PagoResumenDTO;
 import com.datalyze.alquileres.api.dto.request.ContratoRequestDTO;
+import com.datalyze.alquileres.api.dto.request.PagoCompletoRequestDTO;
 import com.datalyze.alquileres.api.dto.request.PagoParcialRequestDTO;
 import com.datalyze.alquileres.api.dto.request.PagoRequestDTO;
 import com.datalyze.alquileres.api.enumeration.ContratoEstado;
@@ -76,6 +77,11 @@ public class PagoController {
     @PostMapping("{id}/pago-parcial")
     public ResponseEntity<PagoDTO> crearPago(@PathVariable Integer id, @RequestBody PagoParcialRequestDTO request) {
         return new ResponseEntity<>(this.pagoService.pagoParcial(id,request), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}/pagar")
+    public ResponseEntity<PagoDTO> registrarPagoCompleto(@PathVariable Integer id, @RequestBody PagoCompletoRequestDTO request) {
+        return ResponseEntity.ok(this.pagoService.registrarPagoCompleto(id, request));
     }
 
 }

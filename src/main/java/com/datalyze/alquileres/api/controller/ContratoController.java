@@ -71,6 +71,14 @@ public class ContratoController {
         return ResponseEntity.ok(this.contratoService.obtenerContratoDisponibleCliente(id));
     }
 
+    @PutMapping("/{id}/finalizar")
+    public ResponseEntity<ContratoDTO> finalizarContrato(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.contratoService.finalizarContrato(id));
+    }
 
+    @PutMapping("/{id}/incumplir")
+    public ResponseEntity<ContratoDTO> incumplirContrato(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.contratoService.incumplirContrato(id));
+    }
 
 }

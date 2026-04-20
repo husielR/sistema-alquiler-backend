@@ -4,6 +4,7 @@ import com.datalyze.alquileres.api.dto.ContratoDTO;
 import com.datalyze.alquileres.api.dto.PagoDTO;
 import com.datalyze.alquileres.api.dto.PagoResumenDTO;
 import com.datalyze.alquileres.api.dto.request.ContratoRequestDTO;
+import com.datalyze.alquileres.api.dto.request.PagoCompletoRequestDTO;
 import com.datalyze.alquileres.api.dto.request.PagoParcialRequestDTO;
 import com.datalyze.alquileres.api.dto.request.PagoRequestDTO;
 import com.datalyze.alquileres.api.entity.ContratoEntity;
@@ -46,6 +47,19 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     @Override
     public PagoDTO crear(PagoRequestDTO request) {
         PagoEntity pagoEntity = this.pagoMapper.toEntity(request);
+        pagoEntity.setEstado(PagoEstado.Pendiente);
+        pagoEntity.setPeriodoAnio(LocalDate.now().getYear());
+        pagoEntity.setPeriodoMes(LocalDate.now().getMonthValue());
+
+        if (pagoEntity.getTipoPago() == PagoTipoPago.Mensualidad ||
+                pagoEntity.getTipoPago() == PagoTipoPago.Deuda) {
+            throw new RuntimeException("Solo puede generar manualmente cargos de tipo Penalidad o Garantía.");
+        }
+
+        if (pagoEntity.getIdContrato() == null) {
+            throw new RuntimeException("Todo cargo debe estar asociado a un contrato.");
+        }
+
         pagoEntity = this.pagoRepository.save(pagoEntity);
         return this.pagoMapper.toDto(pagoEntity);
     }
@@ -55,11 +69,13 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         PagoEntity pagoExistente = this.pagoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pago no encontrado con ID: " + id));
 
-        if (pagoExistente.getEstado() == PagoEstado.Anulado) {
-            throw new RuntimeException("Operación denegada: Un recibo Anulado no puede ser modificado.");
+        if (pagoExistente.getEstado() == PagoEstado.Pagado || pagoExistente.getEstado() == PagoEstado.Anulado) {
+            throw new RuntimeException("No se pueden editar recibos que ya están Pagados o Anulados.");
         }
 
-        this.pagoMapper.updateEntity(request, pagoExistente);
+        pagoExistente.setMontoPagado(request.montoPagado());
+        pagoExistente.setFechaVencimiento(request.fechaVencimiento());
+
         pagoExistente = this.pagoRepository.save(pagoExistente);
         return this.pagoMapper.toDto(pagoExistente);
     }
@@ -107,7 +123,6 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
             nuevoPagoEntity.setEstado(PagoEstado.Pendiente);
            this.pagoRepository.save(nuevoPagoEntity);
             return this.pagoMapper.toDto(pagoEntity);
-
     }
 
     public PagoDTO anularPago(Integer id) {
@@ -121,6 +136,41 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         pagoExistente.setEstado(PagoEstado.Anulado);
         pagoExistente = this.pagoRepository.save(pagoExistente);
 
+        return this.pagoMapper.toDto(pagoExistente);
+    }
+
+    @Transactional
+    public PagoDTO reactivarPagoAnulado(Integer id) {
+        PagoEntity pagoEntity = this.pagoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pago no encontrado."));
+
+        if (pagoEntity.getEstado() != PagoEstado.Anulado) {
+            throw new RuntimeException("Solo se pueden reactivar recibos que estén anulados.");
+        }
+
+        // Lo devolvemos a la vida
+        pagoEntity.setEstado(PagoEstado.Pendiente);
+
+        // Opcional: Si la fecha de vencimiento ya pasó, podrías ponerlo en Atrasado,
+        // pero Pendiente es lo más seguro por ahora.
+
+        pagoEntity = this.pagoRepository.save(pagoEntity);
+        return this.pagoMapper.toDto(pagoEntity);
+    }
+
+    @Transactional
+    public PagoDTO registrarPagoCompleto(Integer id, PagoCompletoRequestDTO request) {
+        PagoEntity pagoExistente = this.pagoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pago no encontrado con ID: " + id));
+
+        if (pagoExistente.getEstado() != PagoEstado.Pendiente && pagoExistente.getEstado() != PagoEstado.Atrasado) {
+            throw new RuntimeException("Solo se pueden cobrar recibos Pendientes o Atrasados.");
+        }
+
+        pagoExistente.setEstado(PagoEstado.Pagado);
+        pagoExistente.setFechaPago(request.fechaPago() != null ? request.fechaPago() : LocalDate.now());
+
+        pagoExistente = this.pagoRepository.save(pagoExistente);
         return this.pagoMapper.toDto(pagoExistente);
     }
 
