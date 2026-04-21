@@ -18,6 +18,9 @@ import com.datalyze.alquileres.api.repository.PagoRepository;
 import com.datalyze.alquileres.api.service.imp.CrudImp;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -110,7 +113,7 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
 
             pagoEntity.setMontoPagado(request.montoTotal());
             pagoEntity.setEstado(PagoEstado.Pagado);
-            pagoEntity.setFechaPago(LocalDate.now());
+            pagoEntity.setFechaPago(request.fechaPago());
             pagoEntity = this.pagoRepository.save(pagoEntity);
 
             PagoEntity nuevoPagoEntity = new PagoEntity();
@@ -172,6 +175,18 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
 
         pagoExistente = this.pagoRepository.save(pagoExistente);
         return this.pagoMapper.toDto(pagoExistente);
+    }
+
+    @Transactional()
+    public Page<PagoDTO> buscarPagosPaginados(int page, int size, String termino, Integer idPropiedad, List<PagoEstado> estados, LocalDate fechaInicio, LocalDate fechaFin) {
+        Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
+        if (estados == null || estados.isEmpty()) {
+            estados = List.of(PagoEstado.values());
+        }
+        Page<PagoEntity> entityPage = this.pagoRepository.buscarPagosAvanzados(
+                termino, idPropiedad, estados, fechaInicio, fechaFin, pageable);
+
+        return entityPage.map(this.pagoMapper::toDto);
     }
 
 }

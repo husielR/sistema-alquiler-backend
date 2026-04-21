@@ -16,6 +16,9 @@ import com.datalyze.alquileres.api.repository.PropiedadRepository;
 import com.datalyze.alquileres.api.service.imp.CrudImp;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -58,36 +61,33 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
 
         propiedad.setEstado(PropiedadEstado.Ocupado);
         this.propiedadRepository.save(propiedad);
-
         ContratoEntity contratoEntity = this.contratoMapper.toEntity(request);
         contratoEntity.setEstado(ContratoEstado.Activo);
+        boolean esInformal = request.fechaFin() == null;
+        if (esInformal) {
+            contratoEntity.setFechaFin(LocalDate.of(2099, 12, 31));
+        }
         contratoEntity = this.contratoRepository.save(contratoEntity);
-
-        long meses = MONTHS.between(
-                contratoEntity.getFechaInicio(),
-                contratoEntity.getFechaFin()
-        );
 
         List<PagoEntity> pagos = new ArrayList<>();
         LocalDate fecha = contratoEntity.getFechaInicio();
+        long mesesAGenerar = esInformal ? 1 : MONTHS.between(contratoEntity.getFechaInicio(), contratoEntity.getFechaFin());
 
-        for (int i = 0; i < meses; i++) {
+        for (int i = 0; i < mesesAGenerar; i++) {
             PagoEntity pagoEntity = new PagoEntity();
-
             pagoEntity.setIdContrato(contratoEntity.getIdContrato());
             pagoEntity.setPeriodoAnio(fecha.getYear());
             pagoEntity.setPeriodoMes(fecha.getMonthValue());
             pagoEntity.setMontoPagado(contratoEntity.getMontoMensual());
             pagoEntity.setEstado(PagoEstado.Pendiente);
             pagoEntity.setTipoPago(PagoTipoPago.Mensualidad);
-
             int diaIdeal = Math.min(contratoEntity.getDiaPago(), fecha.lengthOfMonth());
             LocalDate fechaIdealDePago = fecha.withDayOfMonth(diaIdeal);
-
             pagoEntity.setFechaVencimiento(fechaIdealDePago.plusDays(7));
             pagos.add(pagoEntity);
             fecha = fecha.plusMonths(1);
         }
+
         this.pagoRepository.saveAll(pagos);
 
         return this.contratoMapper.toDto(contratoEntity);
@@ -229,6 +229,15 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
         this.propiedadRepository.save(propiedad);
 
         return this.contratoMapper.toDto(contratoExistente);
+    }
+
+    @Transactional()
+    public Page<ContratoDTO> buscarPaginados(int page, int size, String termino, Integer idPropiedad, ContratoEstado estado) {
+        Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
+        Page<ContratoEntity> entityPage = this.contratoRepository.buscarConFiltrosAvanzados(
+                termino, idPropiedad, estado, pageable);
+
+        return entityPage.map(this.contratoMapper::toDto);
     }
 
 }

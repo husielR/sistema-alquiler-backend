@@ -15,10 +15,12 @@ import com.datalyze.alquileres.api.enumeration.PropiedadEstado;
 import com.datalyze.alquileres.api.service.ClienteService;
 import com.datalyze.alquileres.api.service.PagoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 
@@ -82,6 +84,19 @@ public class PagoController {
     @PutMapping("/{id}/pagar")
     public ResponseEntity<PagoDTO> registrarPagoCompleto(@PathVariable Integer id, @RequestBody PagoCompletoRequestDTO request) {
         return ResponseEntity.ok(this.pagoService.registrarPagoCompleto(id, request));
+    }
+
+    @GetMapping("/paginados")
+    public ResponseEntity<Page<PagoDTO>> getPagosPaginados(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String termino,
+            @RequestParam(required = false) Integer idPropiedad,
+            @RequestParam(required = false) List<PagoEstado> estados, // Spring convierte automático "?estados=Pendiente,Atrasado"
+            @RequestParam(required = false) LocalDate fechaInicio,
+            @RequestParam(required = false) LocalDate fechaFin) {
+
+        return ResponseEntity.ok(this.pagoService.buscarPagosPaginados(page, size, termino, idPropiedad, estados, fechaInicio, fechaFin));
     }
 
 }

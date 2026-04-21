@@ -5,6 +5,7 @@ import com.datalyze.alquileres.api.dto.ClienteResumenDTO;
 import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.service.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -60,6 +61,14 @@ public class ClienteController {
     @GetMapping("/resumen")
     public ResponseEntity<List<ClienteResumenDTO>> getClienteResumenEntity() {
         return ResponseEntity.ok(this.clienteService.getClienteResumenEntity());
+    }
+
+    @GetMapping("/paginados")
+    public ResponseEntity<Page<ClienteDTO>> getClientePaginadosEntity(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String termino) {
+        return ResponseEntity.ok(this.clienteService.getClientePaginadosEntity(page, size, termino));
     }
 
 }

@@ -6,10 +6,12 @@ import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.entity.ClienteEntity;
 import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import com.datalyze.alquileres.api.mapper.ClienteMapper;
-import com.datalyze.alquileres.api.mapper.ContratoMapper;
 import com.datalyze.alquileres.api.repository.ClienteRepository;
 import com.datalyze.alquileres.api.repository.ContratoRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -80,5 +82,15 @@ public class ClienteService {
     public List<ClienteResumenDTO> getClienteResumenEntity() {
         return this.clienteMapper.toDtoResumenList(this.clienteRepository.findAll());
     }
+
+    public Page<ClienteDTO> getClientePaginadosEntity(int page, int size, String termino) {
+        Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
+        Page<ClienteEntity> entityPage;
+        if (termino == null || termino.trim().isEmpty()) {
+            entityPage = this.clienteRepository.findAll(pageable);
+        } else {
+            entityPage = this.clienteRepository.buscarPorOmnibox(termino, pageable);
+        }
+        return entityPage.map(this.clienteMapper::toDto);    }
 
 }

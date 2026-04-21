@@ -9,6 +9,7 @@ import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import com.datalyze.alquileres.api.enumeration.PropiedadEstado;
 import com.datalyze.alquileres.api.service.ContratoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -79,6 +80,17 @@ public class ContratoController {
     @PutMapping("/{id}/incumplir")
     public ResponseEntity<ContratoDTO> incumplirContrato(@PathVariable Integer id) {
         return ResponseEntity.ok(this.contratoService.incumplirContrato(id));
+    }
+
+    @GetMapping("/paginados")
+    public ResponseEntity<Page<ContratoDTO>> getContratosPaginados(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String termino,
+            @RequestParam(required = false) Integer idPropiedad,
+            @RequestParam(required = false) ContratoEstado estado) {
+
+        return ResponseEntity.ok(this.contratoService.buscarPaginados(page, size, termino, idPropiedad, estado));
     }
 
 }

@@ -1,7 +1,10 @@
 package com.datalyze.alquileres.api.dto.request;
 
+import java.time.LocalDate;
+
 public record PagoParcialRequestDTO(
         Double montoTotal,
-        Integer diasParaPagarResto
+        Integer diasParaPagarResto,
+        LocalDate fechaPago
 ) {
 }
