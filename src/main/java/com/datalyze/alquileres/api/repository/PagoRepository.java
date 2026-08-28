@@ -17,10 +17,12 @@ public interface PagoRepository extends JpaRepository<PagoEntity,Integer> {
     List<PagoEntity> findAllByIdContrato(Integer idContrato);
 
     @Query("SELECT p FROM PagoEntity p " +
-            "LEFT JOIN ContratoEntity c ON p.idContrato = c.idContrato " +
-            "LEFT JOIN ClienteEntity cl ON c.cliente.idCliente = cl.idCliente " +
+            "LEFT JOIN p.contrato c " +
+            "LEFT JOIN c.propiedad pr " + // Agregamos el join a propiedad
+            "LEFT JOIN c.cliente cl " +
             "WHERE (p.estado IN :estados) " +
             "AND (CAST(:idPropiedad AS integer) IS NULL OR c.idPropiedad = :idPropiedad) " +
+            "AND (:isAdmin = true OR pr.idUbicacion IN :sedesIds) " + // <--- Filtro de aislamiento
             "AND (CAST(:fechaInicio AS date) IS NULL OR p.fechaVencimiento >= :fechaInicio) " +
             "AND (CAST(:fechaFin AS date) IS NULL OR p.fechaVencimiento <= :fechaFin) " +
             "AND (CAST(:termino AS string) IS NULL OR " +
@@ -33,5 +35,7 @@ public interface PagoRepository extends JpaRepository<PagoEntity,Integer> {
             @Param("estados") List<PagoEstado> estados,
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin,
+            @Param("isAdmin") boolean isAdmin,         // Nuevo
+            @Param("sedesIds") List<Integer> sedesIds, // Nuevo
             Pageable pageable);
 }

@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -183,10 +184,26 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         if (estados == null || estados.isEmpty()) {
             estados = List.of(PagoEstado.values());
         }
+
+        boolean isAdmin = isUsuarioAdmin();
+        List<Integer> misSedes = getSedesDelUsuario();
+
         Page<PagoEntity> entityPage = this.pagoRepository.buscarPagosAvanzados(
-                termino, idPropiedad, estados, fechaInicio, fechaFin, pageable);
+                termino, idPropiedad, estados, fechaInicio, fechaFin, isAdmin, misSedes, pageable);
 
         return entityPage.map(this.pagoMapper::toDto);
+    }
+
+    private boolean isUsuarioAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private List<Integer> getSedesDelUsuario() {
+        @SuppressWarnings("unchecked")
+        List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
+        return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
     }
 
 }

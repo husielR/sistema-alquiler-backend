@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -234,10 +235,26 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
     @Transactional()
     public Page<ContratoDTO> buscarPaginados(int page, int size, String termino, Integer idPropiedad, ContratoEstado estado) {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
+
+        boolean isAdmin = isUsuarioAdmin();
+        List<Integer> misSedes = getSedesDelUsuario();
+
         Page<ContratoEntity> entityPage = this.contratoRepository.buscarConFiltrosAvanzados(
-                termino, idPropiedad, estado, pageable);
+                termino, idPropiedad, estado, isAdmin, misSedes, pageable);
 
         return entityPage.map(this.contratoMapper::toDto);
+    }
+
+    private boolean isUsuarioAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private List<Integer> getSedesDelUsuario() {
+        @SuppressWarnings("unchecked")
+        List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
+        return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
     }
 
 }

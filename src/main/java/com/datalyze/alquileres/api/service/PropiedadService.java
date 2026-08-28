@@ -14,6 +14,8 @@ import com.datalyze.alquileres.api.repository.PropiedadRepository;
 import com.datalyze.alquileres.api.service.imp.CrudImp;
 import lombok.AllArgsConstructor;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +30,27 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
 
     @Override
     public List<PropiedadDTO> obtenerTodos() {
-        List<PropiedadEntity> entidades = this.propiedadRepository.findAll();
+        // 1. Extraer quién es el usuario actual
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // 2. Determinar si es Encargado
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        List<PropiedadEntity> entidades;
+
+        // 3. Condicional de aislamiento
+        if (isEncargado) {
+            // Rescatamos los IDs empaquetados en el JwtFilter
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+
+            entidades = this.propiedadRepository.findByIdUbicacionIn(misSedes);
+        } else {
+            // Es ADMIN: acceso global absoluto
+            entidades = this.propiedadRepository.findAll();
+        }
+
         return this.propiedadMapper.toDtoList(entidades);
     }
 
@@ -87,5 +109,17 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
     public List<PropiedadResumenDTO> getPropiedadesParaEdicion(Integer idPropiedadActual) {
         List<PropiedadEntity> entidades = this.propiedadRepository.findByEstadoNotOrIdPropiedad(PropiedadEstado.Ocupado, idPropiedadActual);
         return this.propiedadMapper.toDtoResumenList(entidades);
+    }
+
+    private boolean isUsuarioAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private List<Integer> getSedesDelUsuario() {
+        @SuppressWarnings("unchecked")
+        List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
+        return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
     }
 }

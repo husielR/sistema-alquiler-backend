@@ -23,8 +23,10 @@ public interface ContratoRepository extends JpaRepository<ContratoEntity,Integer
 
     @Query("SELECT c FROM ContratoEntity c " +
             "LEFT JOIN c.cliente cl " +
+            "LEFT JOIN c.propiedad pr " + // Agregamos el join a propiedad
             "WHERE (CAST(:estado AS string) IS NULL OR c.estado = :estado) " +
             "AND (CAST(:idPropiedad AS integer) IS NULL OR c.idPropiedad = :idPropiedad) " +
+            "AND (:isAdmin = true OR pr.idUbicacion IN :sedesIds) " + // <--- Filtro de aislamiento
             "AND (CAST(:termino AS string) IS NULL OR " +
             "     LOWER(cl.nombres) LIKE LOWER(CONCAT('%', CAST(:termino AS string), '%')) OR " +
             "     LOWER(cl.apellidos) LIKE LOWER(CONCAT('%', CAST(:termino AS string), '%')) OR " +
@@ -33,6 +35,8 @@ public interface ContratoRepository extends JpaRepository<ContratoEntity,Integer
             @Param("termino") String termino,
             @Param("idPropiedad") Integer idPropiedad,
             @Param("estado") ContratoEstado estado,
+            @Param("isAdmin") boolean isAdmin,         // Nuevo
+            @Param("sedesIds") List<Integer> sedesIds, // Nuevo
             Pageable pageable);
 
 }
