@@ -92,11 +92,11 @@ public class PagoController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String termino,
             @RequestParam(required = false) Integer idPropiedad,
-            @RequestParam(required = false) List<PagoEstado> estados, // Spring convierte automático "?estados=Pendiente,Atrasado"
+            @RequestParam(required = false) List<PagoEstado> estados,
             @RequestParam(required = false) LocalDate fechaInicio,
-            @RequestParam(required = false) LocalDate fechaFin) {
-
-        return ResponseEntity.ok(this.pagoService.buscarPagosPaginados(page, size, termino, idPropiedad, estados, fechaInicio, fechaFin));
+            @RequestParam(required = false) LocalDate fechaFin,
+            @RequestParam(required = false) Integer idUbicacion) {
+        return ResponseEntity.ok(this.pagoService.buscarPagosPaginados(page, size, termino, idPropiedad, estados, fechaInicio, fechaFin, idUbicacion));
     }
 
 }

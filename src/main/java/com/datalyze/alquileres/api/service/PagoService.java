@@ -203,19 +203,24 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         return this.pagoMapper.toDto(pagoExistente);
     }
 
-    @Transactional()
-    public Page<PagoDTO> buscarPagosPaginados(int page, int size, String termino, Integer idPropiedad, List<PagoEstado> estados, LocalDate fechaInicio, LocalDate fechaFin) {
+    @Transactional(readOnly = true)
+    public Page<PagoDTO> buscarPagosPaginados(int page, int size, String termino, Integer idPropiedad, List<PagoEstado> estados, LocalDate fechaInicio, LocalDate fechaFin, Integer idUbicacion) {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
         if (estados == null || estados.isEmpty()) {
             estados = List.of(PagoEstado.values());
         }
 
-        boolean isAdmin = isUsuarioAdmin();
-        List<Integer> misSedes = getSedesDelUsuario();
+        boolean isGlobalAdmin = isUsuarioAdmin() && idUbicacion == null;
+        List<Integer> sedesAFiltrar;
+
+        if (idUbicacion != null) {
+            sedesAFiltrar = List.of(idUbicacion);
+        } else {
+            sedesAFiltrar = getSedesDelUsuario();
+        }
 
         Page<PagoEntity> entityPage = this.pagoRepository.buscarPagosAvanzados(
-                termino, idPropiedad, estados, fechaInicio, fechaFin, isAdmin, misSedes, pageable);
-
+                termino, idPropiedad, estados, fechaInicio, fechaFin, isGlobalAdmin, sedesAFiltrar, pageable);
         return entityPage.map(this.pagoMapper::toDto);
     }
 

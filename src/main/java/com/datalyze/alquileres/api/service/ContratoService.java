@@ -254,16 +254,21 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
         return this.contratoMapper.toDto(contratoExistente);
     }
 
-    @Transactional()
-    public Page<ContratoDTO> buscarPaginados(int page, int size, String termino, Integer idPropiedad, ContratoEstado estado) {
+    @Transactional(readOnly = true)
+    public Page<ContratoDTO> buscarPaginados(int page, int size, String termino, Integer idPropiedad, ContratoEstado estado, Integer idUbicacion) {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
 
-        boolean isAdmin = isUsuarioAdmin();
-        List<Integer> misSedes = getSedesDelUsuario();
+        boolean isGlobalAdmin = isUsuarioAdmin() && idUbicacion == null;
+        List<Integer> sedesAFiltrar;
+
+        if (idUbicacion != null) {
+            sedesAFiltrar = List.of(idUbicacion);
+        } else {
+            sedesAFiltrar = getSedesDelUsuario();
+        }
 
         Page<ContratoEntity> entityPage = this.contratoRepository.buscarConFiltrosAvanzados(
-                termino, idPropiedad, estado, isAdmin, misSedes, pageable);
-
+                termino, idPropiedad, estado, isGlobalAdmin, sedesAFiltrar, pageable);
         return entityPage.map(this.contratoMapper::toDto);
     }
 

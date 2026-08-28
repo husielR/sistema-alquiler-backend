@@ -5,6 +5,6 @@ public record PropiedadResumenDTO(
         String tipoPropiedadNombre,
         String identificador,
         Double precioBase,
-        String estado
-) {
-}
+        String estado,
+        String ubicacionNombre
+) {}

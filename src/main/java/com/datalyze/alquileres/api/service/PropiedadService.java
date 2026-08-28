@@ -53,6 +53,32 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
         return this.propiedadMapper.toDtoList(entidades);
     }
 
+    public List<PropiedadDTO> obtenerTodosPorSede(Integer idUbicacionFiltro) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        List<PropiedadEntity> entidades;
+
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            if (misSedes == null || misSedes.isEmpty()) {
+                misSedes = List.of(-1); // Candado de seguridad
+            }
+            entidades = this.propiedadRepository.findByIdUbicacionIn(misSedes);
+        } else {
+            // SI ES ADMIN Y MANDÓ UN FILTRO, FILTRAMOS. SINO, MOSTRAMOS TODO.
+            if (idUbicacionFiltro != null) {
+                entidades = this.propiedadRepository.findByIdUbicacionIn(List.of(idUbicacionFiltro));
+            } else {
+                entidades = this.propiedadRepository.findAll();
+            }
+        }
+
+        return this.propiedadMapper.toDtoList(entidades);
+    }
+
     @Override
     public PropiedadDTO obtenerPorId(Integer id) {
         PropiedadEntity propiedad = this.propiedadRepository.findById(id)

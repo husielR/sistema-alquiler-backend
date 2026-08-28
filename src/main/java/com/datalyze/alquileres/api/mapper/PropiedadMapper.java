@@ -17,7 +17,9 @@ public interface PropiedadMapper {
     List<PropiedadDTO> toDtoList(List<PropiedadEntity> entities);
 
     @Mapping(source = "tipoPropiedad.nombre", target = "tipoPropiedadNombre")
+    @Mapping(source = "ubicacion.nombre", target = "ubicacionNombre") // NUEVA LÍNEA
     PropiedadResumenDTO toDtoResumen(PropiedadEntity entity);
+
     List<PropiedadResumenDTO> toDtoResumenList(List<PropiedadEntity> entities);
 
     PropiedadEntity toEntity(PropiedadRequestDTO request);

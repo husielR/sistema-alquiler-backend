@@ -88,9 +88,9 @@ public class ContratoController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String termino,
             @RequestParam(required = false) Integer idPropiedad,
-            @RequestParam(required = false) ContratoEstado estado) {
-
-        return ResponseEntity.ok(this.contratoService.buscarPaginados(page, size, termino, idPropiedad, estado));
+            @RequestParam(required = false) ContratoEstado estado,
+            @RequestParam(required = false) Integer idUbicacion) {
+        return ResponseEntity.ok(this.contratoService.buscarPaginados(page, size, termino, idPropiedad, estado, idUbicacion));
     }
 
 }

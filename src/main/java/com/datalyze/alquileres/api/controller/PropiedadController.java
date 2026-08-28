@@ -26,8 +26,8 @@ public class PropiedadController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PropiedadDTO>> getPropiedadEntity() {
-        return ResponseEntity.ok(this.propiedadService.obtenerTodos());
+    public ResponseEntity<List<PropiedadDTO>> getPropiedadEntity(@RequestParam(required = false) Integer idUbicacion) {
+        return ResponseEntity.ok(this.propiedadService.obtenerTodosPorSede(idUbicacion));
     }
 
     @PostMapping
