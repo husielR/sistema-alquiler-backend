@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,14 +40,35 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
 
     @Override
     public List<ContratoDTO> obtenerTodos() {
-        return this.contratoMapper.toDtoList(this.contratoRepository.findAll());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        List<ContratoEntity> entidades;
+
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            if (misSedes == null || misSedes.isEmpty()) {
+                misSedes = List.of(-1); // Código defensivo
+            }
+            // Usamos la nueva consulta anidada
+            entidades = this.contratoRepository.findByPropiedad_IdUbicacionIn(misSedes);
+        } else {
+            // ADMIN ve todo
+            entidades = this.contratoRepository.findAll();
+        }
+
+        return this.contratoMapper.toDtoList(entidades);
     }
+
 
     @Override
     public ContratoDTO obtenerPorId(Integer id) {
         ContratoEntity contratoEntity = this.contratoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contrato no encontrado con ID: " + id));
 
+        validarAccesoSede(contratoEntity.getPropiedad().getIdUbicacion());
         return this.contratoMapper.toDto(contratoEntity);
     }
 
@@ -253,8 +275,23 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
     private List<Integer> getSedesDelUsuario() {
         @SuppressWarnings("unchecked")
         List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
-        // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
         return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
     }
+
+    private void validarAccesoSede(Integer idUbicacionElemento) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            // Verificamos si la sede del contrato NO está en la lista de sedes permitidas
+            if (misSedes == null || !misSedes.contains(idUbicacionElemento)) {
+                throw new RuntimeException("Acceso denegado: Este contrato pertenece a otra sede.");
+            }
+        }
+    }
+
 
 }

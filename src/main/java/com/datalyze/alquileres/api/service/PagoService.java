@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +33,22 @@ import java.util.List;
 public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     private final PagoRepository pagoRepository;
     private final PagoMapper pagoMapper;
-    private final ContratoRepository contratoRepository;
 
     @Override
     public List<PagoDTO> obtenerTodos() {
-        List<PagoEntity> entidades = this.pagoRepository.findAll();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        List<PagoEntity> entidades;
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            if (misSedes == null || misSedes.isEmpty()) misSedes = List.of(-1);
+            entidades = this.pagoRepository.findByContrato_Propiedad_IdUbicacionIn(misSedes);
+        } else {
+            entidades = this.pagoRepository.findAll();
+        }
         return this.pagoMapper.toDtoList(entidades);
     }
 
@@ -44,6 +56,7 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     public PagoDTO obtenerPorId(Integer id) {
         PagoEntity pagoEntity = this.pagoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pago no encontrado con ID: " + id));
+        validarAccesoSede(pagoEntity.getContrato().getPropiedad().getIdUbicacion());
         return this.pagoMapper.toDto(pagoEntity);
 
     }
@@ -93,7 +106,19 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     }
 
     public List<PagoResumenDTO> obtenerTodosResumen() {
-        List<PagoEntity> entidades = this.pagoRepository.findAll();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        List<PagoEntity> entidades;
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            if (misSedes == null || misSedes.isEmpty()) misSedes = List.of(-1);
+            entidades = this.pagoRepository.findByContrato_Propiedad_IdUbicacionIn(misSedes);
+        } else {
+            entidades = this.pagoRepository.findAll();
+        }
         return this.pagoMapper.toDtoResumenList(entidades);
     }
 
@@ -204,6 +229,21 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
         // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
         return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
+    }
+
+    private void validarAccesoSede(Integer idUbicacionElemento) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            // Verificamos si la sede del contrato NO está en la lista de sedes permitidas
+            if (misSedes == null || !misSedes.contains(idUbicacionElemento)) {
+                throw new RuntimeException("Acceso denegado: Este contrato pertenece a otra sede.");
+            }
+        }
     }
 
 }

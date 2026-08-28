@@ -38,4 +38,6 @@ public interface PagoRepository extends JpaRepository<PagoEntity,Integer> {
             @Param("isAdmin") boolean isAdmin,         // Nuevo
             @Param("sedesIds") List<Integer> sedesIds, // Nuevo
             Pageable pageable);
+
+    List<PagoEntity> findByContrato_Propiedad_IdUbicacionIn(List<Integer> sedesIds);
 }

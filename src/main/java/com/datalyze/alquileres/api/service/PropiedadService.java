@@ -30,24 +30,23 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
 
     @Override
     public List<PropiedadDTO> obtenerTodos() {
-        // 1. Extraer quién es el usuario actual
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        // 2. Determinar si es Encargado
         boolean isEncargado = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
 
         List<PropiedadEntity> entidades;
 
-        // 3. Condicional de aislamiento
         if (isEncargado) {
-            // Rescatamos los IDs empaquetados en el JwtFilter
             @SuppressWarnings("unchecked")
             List<Integer> misSedes = (List<Integer>) auth.getDetails();
 
+            // ---> CÓDIGO DEFENSIVO AQUÍ <---
+            if (misSedes == null || misSedes.isEmpty()) {
+                misSedes = List.of(-1); // Evita error de sintaxis en Hibernate
+            }
+
             entidades = this.propiedadRepository.findByIdUbicacionIn(misSedes);
         } else {
-            // Es ADMIN: acceso global absoluto
             entidades = this.propiedadRepository.findAll();
         }
 
@@ -103,7 +102,21 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
     }
 
     public List<PropiedadResumenDTO> getPropiedadAvailable() {
-        return this.propiedadMapper.toDtoResumenList(this.propiedadRepository.findByEstadoNot(PropiedadEstado.Ocupado));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isEncargado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
+
+        List<PropiedadEntity> entidades;
+
+        if (isEncargado) {
+            @SuppressWarnings("unchecked")
+            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+            entidades = this.propiedadRepository.findByEstadoNotAndIdUbicacionIn(PropiedadEstado.Ocupado, misSedes);
+        } else {
+            entidades = this.propiedadRepository.findByEstadoNot(PropiedadEstado.Ocupado);
+        }
+
+        return this.propiedadMapper.toDtoResumenList(entidades);
     }
 
     public List<PropiedadResumenDTO> getPropiedadesParaEdicion(Integer idPropiedadActual) {

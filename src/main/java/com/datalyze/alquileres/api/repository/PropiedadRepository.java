@@ -16,4 +16,6 @@ public interface PropiedadRepository extends JpaRepository<PropiedadEntity,Integ
     List<PropiedadEntity> findByEstadoNotOrIdPropiedad(PropiedadEstado estado, Integer idPropiedad);
 
     List<PropiedadEntity> findByIdUbicacionIn(List<Integer> sedesIds);
+
+    List<PropiedadEntity> findByEstadoNotAndIdUbicacionIn(PropiedadEstado estado, List<Integer> sedesIds);
 }

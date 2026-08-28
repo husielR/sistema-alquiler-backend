@@ -39,4 +39,6 @@ public interface ContratoRepository extends JpaRepository<ContratoEntity,Integer
             @Param("sedesIds") List<Integer> sedesIds, // Nuevo
             Pageable pageable);
 
+    List<ContratoEntity> findByPropiedad_IdUbicacionIn(List<Integer> sedesIds);
+
 }
