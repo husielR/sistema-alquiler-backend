@@ -41,4 +41,6 @@ public interface ContratoRepository extends JpaRepository<ContratoEntity,Integer
 
     List<ContratoEntity> findByPropiedad_IdUbicacionIn(List<Integer> sedesIds);
 
+    List<ContratoEntity> findByEstadoAndFechaFinIsNull(ContratoEstado estado);
+
 }

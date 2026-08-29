@@ -1,5 +1,6 @@
 package com.datalyze.alquileres.api.controller;
 
+import com.datalyze.alquileres.api.cron.AutomatizacionCron;
 import com.datalyze.alquileres.api.dto.ClienteDTO;
 import com.datalyze.alquileres.api.dto.ContratoDTO;
 import com.datalyze.alquileres.api.dto.PropiedadDTO;
@@ -21,6 +22,8 @@ import java.util.List;
 @RequestMapping("/contrato")
 public class ContratoController {
     private ContratoService contratoService;
+    @Autowired
+    private AutomatizacionCron automatizacionCron;
 
     @Autowired
     public ContratoController(ContratoService contratoService) {
@@ -91,6 +94,12 @@ public class ContratoController {
             @RequestParam(required = false) ContratoEstado estado,
             @RequestParam(required = false) Integer idUbicacion) {
         return ResponseEntity.ok(this.contratoService.buscarPaginados(page, size, termino, idPropiedad, estado, idUbicacion));
+    }
+
+    @PostMapping("/forzar-cron")
+    public ResponseEntity<String> forzarCron() {
+        automatizacionCron.procesoNocturnoDiario();
+        return ResponseEntity.ok("Proceso nocturno ejecutado exitosamente");
     }
 
 }

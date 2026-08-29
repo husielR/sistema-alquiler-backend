@@ -33,6 +33,8 @@ import java.util.List;
 public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     private final PagoRepository pagoRepository;
     private final PagoMapper pagoMapper;
+    private final ContratoRepository contratoRepository;
+    private final com.datalyze.alquileres.api.repository.PropiedadRepository propiedadRepository;
 
     @Override
     public List<PagoDTO> obtenerTodos() {
@@ -192,14 +194,29 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         PagoEntity pagoExistente = this.pagoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pago no encontrado con ID: " + id));
 
-        if (pagoExistente.getEstado() != PagoEstado.Pendiente && pagoExistente.getEstado() != PagoEstado.Atrasado) {
-            throw new RuntimeException("Solo se pueden cobrar recibos Pendientes o Atrasados.");
-        }
-
         pagoExistente.setEstado(PagoEstado.Pagado);
         pagoExistente.setFechaPago(request.fechaPago() != null ? request.fechaPago() : LocalDate.now());
-
         pagoExistente = this.pagoRepository.save(pagoExistente);
+
+        ContratoEntity contrato = pagoExistente.getContrato();
+        // Solo aplica si el contrato es Formal (tiene fecha fin)
+        if (contrato.getFechaFin() != null) {
+            boolean quedanPendientes = this.pagoRepository.findAllByIdContrato(contrato.getIdContrato())
+                    .stream()
+                    .anyMatch(p -> p.getEstado() == PagoEstado.Pendiente || p.getEstado() == PagoEstado.Atrasado);
+
+            if (!quedanPendientes) {
+                // 1. Finalizamos el contrato
+                contrato.setEstado(com.datalyze.alquileres.api.enumeration.ContratoEstado.Finalizado);
+                this.contratoRepository.save(contrato);
+
+                // 2. Liberamos la propiedad
+                PropiedadEntity propiedad = contrato.getPropiedad();
+                propiedad.setEstado(com.datalyze.alquileres.api.enumeration.PropiedadEstado.Disponible);
+                this.propiedadRepository.save(propiedad);
+            }
+        }
+
         return this.pagoMapper.toDto(pagoExistente);
     }
 

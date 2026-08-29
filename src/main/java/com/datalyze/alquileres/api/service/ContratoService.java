@@ -84,17 +84,30 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
 
         propiedad.setEstado(PropiedadEstado.Ocupado);
         this.propiedadRepository.save(propiedad);
+
         ContratoEntity contratoEntity = this.contratoMapper.toEntity(request);
         contratoEntity.setEstado(ContratoEstado.Activo);
+
         boolean esInformal = request.fechaFin() == null;
-        if (esInformal) {
-            contratoEntity.setFechaFin(LocalDate.of(2099, 12, 31));
-        }
+
+        // Se eliminó la asignación forzada al año 2099 para los contratos informales.
+        // Ahora fechaFin se guardará como null en la base de datos, permitiendo que el Cron lo lea correctamente.
+
         contratoEntity = this.contratoRepository.save(contratoEntity);
 
         List<PagoEntity> pagos = new ArrayList<>();
         LocalDate fecha = contratoEntity.getFechaInicio();
-        long mesesAGenerar = esInformal ? 1 : MONTHS.between(contratoEntity.getFechaInicio(), contratoEntity.getFechaFin());
+
+        long mesesAGenerar;
+        if (esInformal) {
+            long mesesTranscurridos = java.time.temporal.ChronoUnit.MONTHS.between(
+                    fecha.withDayOfMonth(1),
+                    LocalDate.now().withDayOfMonth(1)
+            );
+            mesesAGenerar = mesesTranscurridos >= 0 ? mesesTranscurridos + 1 : 1;
+        } else {
+            mesesAGenerar = java.time.temporal.ChronoUnit.MONTHS.between(contratoEntity.getFechaInicio(), contratoEntity.getFechaFin());
+        }
 
         for (int i = 0; i < mesesAGenerar; i++) {
             PagoEntity pagoEntity = new PagoEntity();
@@ -104,9 +117,11 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
             pagoEntity.setMontoPagado(contratoEntity.getMontoMensual());
             pagoEntity.setEstado(PagoEstado.Pendiente);
             pagoEntity.setTipoPago(PagoTipoPago.Mensualidad);
+
             int diaIdeal = Math.min(contratoEntity.getDiaPago(), fecha.lengthOfMonth());
             LocalDate fechaIdealDePago = fecha.withDayOfMonth(diaIdeal);
             pagoEntity.setFechaVencimiento(fechaIdealDePago.plusDays(7));
+
             pagos.add(pagoEntity);
             fecha = fecha.plusMonths(1);
         }

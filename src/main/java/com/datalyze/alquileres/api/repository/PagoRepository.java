@@ -40,4 +40,8 @@ public interface PagoRepository extends JpaRepository<PagoEntity,Integer> {
             Pageable pageable);
 
     List<PagoEntity> findByContrato_Propiedad_IdUbicacionIn(List<Integer> sedesIds);
+
+    List<PagoEntity> findByEstado(PagoEstado estado);
+
+    PagoEntity findFirstByIdContratoOrderByPeriodoAnioDescPeriodoMesDesc(Integer idContrato);
 }

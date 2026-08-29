@@ -35,7 +35,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 4. Reglas de acceso
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // La ruta de login será pública
+                        .requestMatchers("/auth/**", "/error").permitAll() // La ruta de login será pública
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated() // Cualquier otra ruta pedirá Token obligatorio
                 ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

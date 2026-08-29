@@ -98,14 +98,13 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
         PropiedadEntity propiedadExistente = this.propiedadRepository.findById(idPropiedad)
                 .orElseThrow(() -> new RuntimeException("Propiedad no encontrada con ID: " + idPropiedad));
 
-        if (request.estado().equals("Disponible")) {
+        if ("Disponible".equals(request.estado())) {
             boolean tieneContratoActivo = contratoRepository.existsByPropiedad_IdPropiedadAndEstado(idPropiedad, ContratoEstado.Activo);
-
             if (tieneContratoActivo) {
                 throw new RuntimeException("No se puede marcar como Disponible. Existe un contrato ACTIVO para esta propiedad.");
             }
-
         }
+
         this.propiedadMapper.updateEntity(request, propiedadExistente);
         propiedadExistente = this.propiedadRepository.save(propiedadExistente);
         return this.propiedadMapper.toDto(propiedadExistente);
@@ -123,7 +122,7 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
         if (tienePropiedad) {
             throw new RuntimeException("No se puede eliminar: Este propiedad tiene contratos en su historial. Por favor, desactívelo en su lugar.");
         } else {
-            this.contratoRepository.deleteById(id);
+            this.propiedadRepository.deleteById(id);
         }
     }
 
