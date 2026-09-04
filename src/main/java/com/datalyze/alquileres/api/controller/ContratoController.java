@@ -22,12 +22,12 @@ import java.util.List;
 @RequestMapping("/contrato")
 public class ContratoController {
     private ContratoService contratoService;
-    @Autowired
     private AutomatizacionCron automatizacionCron;
 
     @Autowired
-    public ContratoController(ContratoService contratoService) {
+    public ContratoController(ContratoService contratoService, AutomatizacionCron automatizacionCron) {
         this.contratoService = contratoService;
+        this.automatizacionCron = automatizacionCron;
     }
 
     @GetMapping
