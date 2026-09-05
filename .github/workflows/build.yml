@@ -4,8 +4,25 @@ on:
     branches: [ "main" ]
 
 jobs:
-  compilar:
+  compilar-y-auditar:
     runs-on: ubuntu-latest
+
+    # 1. Levantar la base de datos temporal para los tests
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: alquileres_ica_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Descargar el codigo fuente
         uses: actions/checkout@v4
@@ -19,5 +36,8 @@ jobs:
 
       - name: Construir y Escanear en SonarCloud
         env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # 2. Inyectar variables efímeras para que Spring no falle
+          JWT_SECRET_KEY: "clave-falsa-solo-para-que-pasen-los-tests"
+          DB_PASSWORD: "root"
         run: mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sistema-alquiler-backend -Dsonar.organization=husielr -Dsonar.host.url=https://sonarcloud.io
