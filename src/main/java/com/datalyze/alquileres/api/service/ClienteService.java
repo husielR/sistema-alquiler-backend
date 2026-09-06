@@ -37,11 +37,8 @@ public class ClienteService {
 
     // C - CREATE
     public ClienteDTO crearCliente(ClienteRequestDTO request) {
-        // 1. Convertimos el Request a Entidad
         ClienteEntity nuevaEntidad = this.clienteMapper.toEntity(request);
-        // 2. Guardamos en Base de Datos
         nuevaEntidad = this.clienteRepository.save(nuevaEntidad);
-        // 3. Devolvemos el DTO completo (ahora ya tiene su ID generado)
         return this.clienteMapper.toDto(nuevaEntidad);
     }
 
