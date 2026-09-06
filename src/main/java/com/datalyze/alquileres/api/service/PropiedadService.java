@@ -1,19 +1,17 @@
 package com.datalyze.alquileres.api.service;
 
-import com.datalyze.alquileres.api.dto.ClienteDTO;
 import com.datalyze.alquileres.api.dto.PropiedadDTO;
 import com.datalyze.alquileres.api.dto.PropiedadResumenDTO;
 import com.datalyze.alquileres.api.dto.request.PropiedadRequestDTO;
-import com.datalyze.alquileres.api.entity.ClienteEntity;
 import com.datalyze.alquileres.api.entity.PropiedadEntity;
 import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import com.datalyze.alquileres.api.enumeration.PropiedadEstado;
 import com.datalyze.alquileres.api.mapper.PropiedadMapper;
 import com.datalyze.alquileres.api.repository.ContratoRepository;
 import com.datalyze.alquileres.api.repository.PropiedadRepository;
+import com.datalyze.alquileres.api.service.component.UsuarioActualService;
 import com.datalyze.alquileres.api.service.imp.CrudImp;
 import lombok.AllArgsConstructor;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,49 +24,29 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
     private final PropiedadRepository propiedadRepository;
     private final PropiedadMapper propiedadMapper;
     private final ContratoRepository contratoRepository;
+    private final UsuarioActualService usuarioActualService;
 
 
     @Override
     public List<PropiedadDTO> obtenerTodos() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isEncargado = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
-
         List<PropiedadEntity> entidades;
 
-        if (isEncargado) {
-            @SuppressWarnings("unchecked")
-            List<Integer> misSedes = (List<Integer>) auth.getDetails();
-
-            // ---> CÓDIGO DEFENSIVO AQUÍ <---
-            if (misSedes == null || misSedes.isEmpty()) {
-                misSedes = List.of(-1); // Evita error de sintaxis en Hibernate
-            }
-
+        if (usuarioActualService.isEncargado()) {
+            List<Integer> misSedes = usuarioActualService.obtenerMisSedes();
             entidades = this.propiedadRepository.findByIdUbicacionIn(misSedes);
         } else {
             entidades = this.propiedadRepository.findAll();
         }
-
         return this.propiedadMapper.toDtoList(entidades);
     }
 
     public List<PropiedadDTO> obtenerTodosPorSede(Integer idUbicacionFiltro) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isEncargado = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
-
+        
         List<PropiedadEntity> entidades;
-
-        if (isEncargado) {
-            @SuppressWarnings("unchecked")
-            List<Integer> misSedes = (List<Integer>) auth.getDetails();
-            if (misSedes == null || misSedes.isEmpty()) {
-                misSedes = List.of(-1); // Candado de seguridad
-            }
+        if (usuarioActualService.isEncargado()) {
+            List<Integer> misSedes = usuarioActualService.obtenerMisSedes();
             entidades = this.propiedadRepository.findByIdUbicacionIn(misSedes);
         } else {
-            // SI ES ADMIN Y MANDÓ UN FILTRO, FILTRAMOS. SINO, MOSTRAMOS TODO.
             if (idUbicacionFiltro != null) {
                 entidades = this.propiedadRepository.findByIdUbicacionIn(List.of(idUbicacionFiltro));
             } else {
@@ -127,15 +105,10 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
     }
 
     public List<PropiedadResumenDTO> getPropiedadAvailable() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isEncargado = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
-
         List<PropiedadEntity> entidades;
 
-        if (isEncargado) {
-            @SuppressWarnings("unchecked")
-            List<Integer> misSedes = (List<Integer>) auth.getDetails();
+        if (usuarioActualService.isEncargado()) {
+            List<Integer> misSedes = usuarioActualService.obtenerMisSedes();
             entidades = this.propiedadRepository.findByEstadoNotAndIdUbicacionIn(PropiedadEstado.Ocupado, misSedes);
         } else {
             entidades = this.propiedadRepository.findByEstadoNot(PropiedadEstado.Ocupado);
@@ -149,15 +122,6 @@ public class PropiedadService implements CrudImp<PropiedadDTO, PropiedadRequestD
         return this.propiedadMapper.toDtoResumenList(entidades);
     }
 
-    private boolean isUsuarioAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-    }
 
-    private List<Integer> getSedesDelUsuario() {
-        @SuppressWarnings("unchecked")
-        List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
-        // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
-        return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
-    }
+
 }

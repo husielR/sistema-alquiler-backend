@@ -19,7 +19,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class) // Habilita las anotaciones de Mockito
@@ -117,7 +116,7 @@ class ClienteServiceTest {
                 "999111222"
         );
 
-        when(clienteRepository.findById(id)).thenReturn(Optional.ofNullable(mock(ClienteEntity.class)));
+        when(clienteRepository.findById(id)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> clienteService.actualizarCliente(id, request));
 
     }

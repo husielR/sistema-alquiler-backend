@@ -15,6 +15,8 @@ import com.datalyze.alquileres.api.enumeration.PagoTipoPago;
 import com.datalyze.alquileres.api.mapper.PagoMapper;
 import com.datalyze.alquileres.api.repository.ContratoRepository;
 import com.datalyze.alquileres.api.repository.PagoRepository;
+import com.datalyze.alquileres.api.repository.PropiedadRepository;
+import com.datalyze.alquileres.api.service.component.UsuarioActualService;
 import com.datalyze.alquileres.api.service.imp.CrudImp;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,19 +36,15 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     private final PagoRepository pagoRepository;
     private final PagoMapper pagoMapper;
     private final ContratoRepository contratoRepository;
-    private final com.datalyze.alquileres.api.repository.PropiedadRepository propiedadRepository;
+    private final PropiedadRepository propiedadRepository;
+    private final UsuarioActualService usuarioActualService;
 
     @Override
     public List<PagoDTO> obtenerTodos() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isEncargado = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
-
         List<PagoEntity> entidades;
-        if (isEncargado) {
+        if (usuarioActualService.isEncargado()) {
             @SuppressWarnings("unchecked")
-            List<Integer> misSedes = (List<Integer>) auth.getDetails();
-            if (misSedes == null || misSedes.isEmpty()) misSedes = List.of(-1);
+            List<Integer> misSedes = usuarioActualService.obtenerMisSedes();
             entidades = this.pagoRepository.findByContrato_Propiedad_IdUbicacionIn(misSedes);
         } else {
             entidades = this.pagoRepository.findAll();
@@ -108,18 +106,12 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
     }
 
     public List<PagoResumenDTO> obtenerTodosResumen() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isEncargado = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
-
         List<PagoEntity> entidades;
-        if (isEncargado) {
-            @SuppressWarnings("unchecked")
-            List<Integer> misSedes = (List<Integer>) auth.getDetails();
-            if (misSedes == null || misSedes.isEmpty()) misSedes = List.of(-1);
-            entidades = this.pagoRepository.findByContrato_Propiedad_IdUbicacionIn(misSedes);
+        if (usuarioActualService.isEncargado()) {
+            List<Integer> misSedes = usuarioActualService.obtenerMisSedes();
+            entidades = pagoRepository.findByContrato_Propiedad_IdUbicacionIn(misSedes);
         } else {
-            entidades = this.pagoRepository.findAll();
+            entidades = pagoRepository.findAll();
         }
         return this.pagoMapper.toDtoResumenList(entidades);
     }
@@ -227,13 +219,13 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
             estados = List.of(PagoEstado.values());
         }
 
-        boolean isGlobalAdmin = isUsuarioAdmin() && idUbicacion == null;
+        boolean isGlobalAdmin = usuarioActualService.isAdmin() && idUbicacion == null;
         List<Integer> sedesAFiltrar;
 
         if (idUbicacion != null) {
             sedesAFiltrar = List.of(idUbicacion);
         } else {
-            sedesAFiltrar = getSedesDelUsuario();
+            sedesAFiltrar = usuarioActualService.obtenerMisSedes();
         }
 
         Page<PagoEntity> entityPage = this.pagoRepository.buscarPagosAvanzados(
@@ -241,28 +233,10 @@ public class PagoService implements CrudImp<PagoDTO, PagoRequestDTO> {
         return entityPage.map(this.pagoMapper::toDto);
     }
 
-    private boolean isUsuarioAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-    private List<Integer> getSedesDelUsuario() {
-        @SuppressWarnings("unchecked")
-        List<Integer> sedes = (List<Integer>) SecurityContextHolder.getContext().getAuthentication().getDetails();
-        // Hibernate falla si se pasa una lista vacía a un IN (:lista), así que pasamos [-1] si está vacía
-        return (sedes == null || sedes.isEmpty()) ? List.of(-1) : sedes;
-    }
-
     private void validarAccesoSede(Integer idUbicacionElemento) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isEncargado = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ENCARGADO"));
-
-        if (isEncargado) {
-            @SuppressWarnings("unchecked")
-            List<Integer> misSedes = (List<Integer>) auth.getDetails();
-            // Verificamos si la sede del contrato NO está en la lista de sedes permitidas
-            if (misSedes == null || !misSedes.contains(idUbicacionElemento)) {
+        if (usuarioActualService.isEncargado()) {
+            List<Integer> misSedes = usuarioActualService.obtenerMisSedes();
+            if (!misSedes.contains(idUbicacionElemento)) {
                 throw new RuntimeException("Acceso denegado: Este contrato pertenece a otra sede.");
             }
         }

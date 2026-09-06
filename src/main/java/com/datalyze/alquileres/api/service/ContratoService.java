@@ -190,23 +190,7 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
         }
 
         contratoExistente.setEstado(ContratoEstado.Anulado);
-        contratoExistente = this.contratoRepository.save(contratoExistente);
-
-        List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());
-        for (PagoEntity pago : pagosContrato) {
-            if (pago.getEstado() == PagoEstado.Pendiente || pago.getEstado() == PagoEstado.Atrasado) {
-                pago.setEstado(PagoEstado.Anulado);
-            }
-        }
-        this.pagoRepository.saveAll(pagosContrato);
-
-        PropiedadEntity propiedad = this.propiedadRepository.findById(contratoExistente.getIdPropiedad())
-                .orElseThrow(() -> new RuntimeException("Propiedad vinculada no encontrada"));
-
-        propiedad.setEstado(PropiedadEstado.Disponible);
-        this.propiedadRepository.save(propiedad);
-
-        return this.contratoMapper.toDto(contratoExistente);
+        return getContratoDTO(contratoExistente);
     }
 
     @Transactional
@@ -220,23 +204,7 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
         }
 
         contratoExistente.setEstado(ContratoEstado.Finalizado);
-        contratoExistente = this.contratoRepository.save(contratoExistente);
-
-        List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());
-        for (PagoEntity pago : pagosContrato) {
-            if (pago.getEstado() == PagoEstado.Pendiente || pago.getEstado() == PagoEstado.Atrasado) {
-                pago.setEstado(PagoEstado.Anulado);
-            }
-        }
-        this.pagoRepository.saveAll(pagosContrato);
-
-        PropiedadEntity propiedad = this.propiedadRepository.findById(contratoExistente.getIdPropiedad())
-                .orElseThrow(() -> new RuntimeException("Propiedad vinculada no encontrada"));
-
-        propiedad.setEstado(PropiedadEstado.Disponible);
-        this.propiedadRepository.save(propiedad);
-
-        return this.contratoMapper.toDto(contratoExistente);
+        return getContratoDTO(contratoExistente);
     }
 
     @Transactional
@@ -250,23 +218,7 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
         }
 
         contratoExistente.setEstado(ContratoEstado.Incumplido);
-        contratoExistente = this.contratoRepository.save(contratoExistente);
-
-        List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());
-        for (PagoEntity pago : pagosContrato) {
-            if (pago.getEstado() == PagoEstado.Pendiente || pago.getEstado() == PagoEstado.Atrasado) {
-                pago.setEstado(PagoEstado.Anulado);
-            }
-        }
-        this.pagoRepository.saveAll(pagosContrato);
-
-        PropiedadEntity propiedad = this.propiedadRepository.findById(contratoExistente.getIdPropiedad())
-                .orElseThrow(() -> new RuntimeException("Propiedad vinculada no encontrada"));
-
-        propiedad.setEstado(PropiedadEstado.Disponible);
-        this.propiedadRepository.save(propiedad);
-
-        return this.contratoMapper.toDto(contratoExistente);
+        return getContratoDTO(contratoExistente);
     }
 
     @Transactional(readOnly = true)
@@ -311,6 +263,26 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
                 throw new RuntimeException("Acceso denegado: Este contrato pertenece a otra sede.");
             }
         }
+    }
+
+    private ContratoDTO getContratoDTO(ContratoEntity contratoExistente) {
+        contratoExistente = this.contratoRepository.save(contratoExistente);
+
+        List<PagoEntity> pagosContrato = this.pagoRepository.findAllByIdContrato(contratoExistente.getIdContrato());
+        for (PagoEntity pago : pagosContrato) {
+            if (pago.getEstado() == PagoEstado.Pendiente || pago.getEstado() == PagoEstado.Atrasado) {
+                pago.setEstado(PagoEstado.Anulado);
+            }
+        }
+        this.pagoRepository.saveAll(pagosContrato);
+
+        PropiedadEntity propiedad = this.propiedadRepository.findById(contratoExistente.getIdPropiedad())
+                .orElseThrow(() -> new RuntimeException("Propiedad vinculada no encontrada"));
+
+        propiedad.setEstado(PropiedadEstado.Disponible);
+        this.propiedadRepository.save(propiedad);
+
+        return this.contratoMapper.toDto(contratoExistente);
     }
 
 
