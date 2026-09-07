@@ -40,4 +40,4 @@ jobs:
           # 2. Inyectar variables efímeras para que Spring no falle
           JWT_SECRET_KEY: "clave-falsa-solo-para-que-pasen-los-tests"
           DB_PASSWORD: "root"
-        run: mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sistema-alquiler-backend -Dsonar.organization=husielr -Dsonar.host.url=https://sonarcloud.io
+        run: mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sistema-alquiler-backend -Dsonar.organization=husielr -Dsonar.host.url=[https://sonarcloud.io](https://sonarcloud.io) -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
