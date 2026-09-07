@@ -1,11 +1,15 @@
-# Etapa 1: Construcción
+# Etapa 1: Construccion
 FROM eclipse-temurin:17-jdk-alpine AS builder
 WORKDIR /app
 COPY . .
-# Compilamos saltando los tests para ir directo al empaquetado
+
+# Damos permiso de ejecucion al archivo de Maven
+RUN chmod +x mvnw
+
+# Compilamos saltando los tests (porque GitHub Actions ya los ejecuto antes)
 RUN ./mvnw clean package -DskipTests
 
-# Etapa 2: Imagen final de producción
+# Etapa 2: Imagen final de produccion
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 # Solo copiamos el archivo .jar compilado de la etapa anterior
