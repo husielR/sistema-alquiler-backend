@@ -52,3 +52,15 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/sistema-alquileres-api:latest
+
+      - name : Iniciar Sesion en Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Desplegar en Azure Container Apps
+        run: |
+          az containerapp update \
+          --name sistema-alquileres-api \
+          --resource-group Alquileres-RG \
+          --image ${{ secrets.DOCKER_USERNAME }}/sistema-alquileres-api:latest
