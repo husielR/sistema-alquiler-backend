@@ -2,9 +2,7 @@ package com.datalyze.alquileres.api.entity;
 
 import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -16,7 +14,9 @@ import java.util.List;
 @Table(name = "Contrato")
 @Getter
 @Setter
+@AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class ContratoEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

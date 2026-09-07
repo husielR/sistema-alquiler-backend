@@ -1,11 +1,9 @@
 package com.datalyze.alquileres.api.service;
 
 import com.datalyze.alquileres.api.dto.ContratoDTO;
-import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.dto.request.ContratoRequestDTO;
-import com.datalyze.alquileres.api.entity.PropiedadEntity;
-import com.datalyze.alquileres.api.entity.TipoPropiedadEntity;
-import com.datalyze.alquileres.api.entity.UbicacionEntity;
+import com.datalyze.alquileres.api.entity.*;
+import com.datalyze.alquileres.api.enumeration.ContratoEstado;
 import com.datalyze.alquileres.api.enumeration.PropiedadEstado;
 import com.datalyze.alquileres.api.mapper.ContratoMapper;
 import com.datalyze.alquileres.api.repository.ContratoRepository;
@@ -15,14 +13,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class) // Habilita las anotaciones de Mockito
@@ -44,7 +43,7 @@ class ContratoServiceTest {
     void crearContrato_todoCorrecto() {
         ContratoRequestDTO contratoAleatorio = new ContratoRequestDTO(
                 1024,                                 // idCliente
-                508,                                  // idPropiedad
+                2,                                  // idPropiedad
                 LocalDate.of(2026, 10, 1),            // fechaInicio
                 LocalDate.of(2027, 10, 1),            // fechaFin
                 1500.00,                              // montoGarantia
@@ -52,26 +51,48 @@ class ContratoServiceTest {
                 5,                                    // diaPago
                 "ACTIVO"                              // estado
         );
-
-        TipoPropiedadEntity tipoPropiedadMock = Mockito.mock(TipoPropiedadEntity.class);
-        UbicacionEntity ubicacionMock = Mockito.mock(UbicacionEntity.class);
+        Integer id = 2;
+        TipoPropiedadEntity tipoPropiedadMock = mock(TipoPropiedadEntity.class);
+        UbicacionEntity ubicacionMock = mock(UbicacionEntity.class);
         // 2. Construimos la entidad principal
         PropiedadEntity propiedadFicticia = new PropiedadEntity();
-        propiedadFicticia.setIdPropiedad(101);
+        propiedadFicticia.setIdPropiedad(2);
         propiedadFicticia.setIdUbicacion(12);
         propiedadFicticia.setIdTipo(3);
         propiedadFicticia.setIdentificador("DEP-402-B");
         propiedadFicticia.setPrecioBase(850.00);
         propiedadFicticia.setEstado(PropiedadEstado.Disponible);
-
-        // Asignamos las relaciones lazy en caso de que tu test las consuma
         propiedadFicticia.setTipoPropiedad(tipoPropiedadMock);
         propiedadFicticia.setUbicacion(ubicacionMock);
-        Integer id = 2;
 
-        // Le decimos a los fakes exactamente qué responder cuando el servicio los llame
+        PropiedadEntity propiedadOcupada = new PropiedadEntity();
+        propiedadOcupada.setIdPropiedad(3);
+
+        ContratoEntity contrato = ContratoEntity.builder()
+                .idContrato(1)
+                .idCliente(10)
+                .idPropiedad(20)
+                .fechaInicio(LocalDate.of(2026, 1, 1))
+                .fechaFin(LocalDate.of(2026, 12, 31))
+                .montoGarantia(1000.0)
+                .montoMensual(1500.0)
+                .diaPago(5)
+                .estado(ContratoEstado.Anulado)
+                .cliente(mock(ClienteEntity.class))
+                .propiedad(mock(PropiedadEntity.class))
+                .pago(List.of())
+                .build();
+
+        ContratoDTO contratoDTO = mock(ContratoDTO.class);
+
         when(propiedadRepository.findById(id)).thenReturn(Optional.of(propiedadFicticia));
+        when(contratoMapper.toEntity(contratoAleatorio)).thenReturn((contrato));
+        when(contratoRepository.save(any(ContratoEntity.class))).thenReturn(contrato);
+        when(contratoMapper.toDto(any(ContratoEntity.class))).thenReturn(contratoDTO);
 
+        ContratoDTO result = contratoService.crear(contratoAleatorio);
+        assertNotNull(result);
+        assertEquals(contratoDTO, result);
     }
 
     @Test

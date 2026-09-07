@@ -55,7 +55,6 @@ public class ContratoService implements CrudImp<ContratoDTO, ContratoRequestDTO>
             // Usamos la nueva consulta anidada
             entidades = this.contratoRepository.findByPropiedad_IdUbicacionIn(misSedes);
         } else {
-            // ADMIN ve todo
             entidades = this.contratoRepository.findAll();
         }
 

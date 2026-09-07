@@ -5,7 +5,6 @@ import com.datalyze.alquileres.api.dto.request.ClienteRequestDTO;
 import com.datalyze.alquileres.api.entity.ClienteEntity;
 import com.datalyze.alquileres.api.mapper.ClienteMapper;
 import com.datalyze.alquileres.api.repository.ClienteRepository;
-import org.hibernate.boot.internal.Extends;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
