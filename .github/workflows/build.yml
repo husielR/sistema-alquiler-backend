@@ -7,7 +7,6 @@ jobs:
   compilar-y-auditar:
     runs-on: ubuntu-latest
 
-    # 1. Levantar la base de datos temporal para los tests
     services:
       postgres:
         image: postgres:15-alpine
@@ -37,7 +36,19 @@ jobs:
       - name: Construir y Escanear en SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # 2. Inyectar variables efímeras para que Spring no falle
           JWT_SECRET_KEY: "clave-falsa-solo-para-que-pasen-los-tests"
           DB_PASSWORD: "root"
         run: mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sistema-alquiler-backend -Dsonar.organization=husielr -Dsonar.host.url=https://sonarcloud.io -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+      - name: Iniciar sesion en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Construir y subir imagen Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/sistema-alquileres-api:latest
